@@ -20,7 +20,11 @@ module.exports.getUserById = (req, res) => {
       }
       res.send({ data: user });
     })
-    .catch(() => {
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
+        return;
+      }
       res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message });
     });
 };

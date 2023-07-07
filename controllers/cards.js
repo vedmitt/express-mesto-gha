@@ -34,7 +34,13 @@ module.exports.removeCardById = (req, res) => {
       }
       res.send({ data: card });
     })
-    .catch(() => res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message }));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
+        return;
+      }
+      res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message });
+    });
 };
 
 module.exports.likeCard = (req, res) => {

@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const path = require('path');
 
 const { PORT = 3000 } = process.env;
 
@@ -23,6 +24,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(express.static(path.join(__dirname, 'public')));
 app.use('/users', require('./routes/users'));
 app.use('/cards', require('./routes/cards'));
 
