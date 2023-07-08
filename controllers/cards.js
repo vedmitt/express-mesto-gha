@@ -1,6 +1,7 @@
 const Card = require('../models/card');
-const { ValidationError, NotExistError, DefaultError } = require('./errors');
+const { ValidationError, NotExistError, DefaultError } = require('../errors/errors');
 
+const CREATED_CODE = 201;
 const VALIDATION_ERROR = new ValidationError('Переданы некорректные данные');
 const NOT_EXIST_ERROR = new NotExistError('Карточка с указанным _id не найдена');
 const DEFAULT_ERROR = new DefaultError();
@@ -15,7 +16,7 @@ module.exports.createCard = (req, res) => {
   const { name, link } = req.body;
 
   Card.create({ name, link, owner: req.user._id })
-    .then((card) => res.send({ data: card }))
+    .then((card) => res.status(CREATED_CODE).send({ data: card }))
     .catch((err) => {
       if (err.name === VALIDATION_ERROR.name) {
         res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
@@ -27,14 +28,15 @@ module.exports.createCard = (req, res) => {
 
 module.exports.removeCardById = (req, res) => {
   Card.findByIdAndRemove(req.params.cardId)
+    .orFail(NOT_EXIST_ERROR)
     .then((card) => {
-      if (!card) {
-        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
-        return;
-      }
       res.send({ data: card });
     })
     .catch((err) => {
+      if (err.name === 'NotExistError') {
+        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
+        return;
+      }
       if (err.name === 'CastError') {
         res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
         return;
@@ -49,14 +51,15 @@ module.exports.likeCard = (req, res) => {
     { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
     { new: true },
   )
+    .orFail(NOT_EXIST_ERROR)
     .then((card) => {
-      if (!card) {
-        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
-        return;
-      }
       res.send({ data: card });
     })
     .catch((err) => {
+      if (err.name === 'NotExistError') {
+        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
+        return;
+      }
       if (err.name === 'CastError') {
         res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
         return;
@@ -71,14 +74,15 @@ module.exports.dislikeCard = (req, res) => {
     { $pull: { likes: req.user._id } }, // убрать _id из массива
     { new: true },
   )
+    .orFail(NOT_EXIST_ERROR)
     .then((card) => {
-      if (!card) {
-        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
-        return;
-      }
       res.send({ data: card });
     })
     .catch((err) => {
+      if (err.name === 'NotExistError') {
+        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
+        return;
+      }
       if (err.name === 'CastError') {
         res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
         return;

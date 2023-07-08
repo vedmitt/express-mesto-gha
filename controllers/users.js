@@ -1,9 +1,10 @@
 const User = require('../models/user');
-const { ValidationError, NotExistError, DefaultError } = require('./errors');
+const { ValidationError, NotExistError, DefaultError } = require('../errors/errors');
 
-const VALIDATION_ERROR = new ValidationError('Переданы некорректные данные');
-const NOT_EXIST_ERROR = new NotExistError('Пользователь по указанному _id не найден');
-const DEFAULT_ERROR = new DefaultError();
+const CREATED_CODE = 201;
+const VALIDATION_ERROR = new ValidationError('Переданы некорректные данные'); // 400
+const NOT_EXIST_ERROR = new NotExistError('Пользователь по указанному _id не найден'); // 404
+const DEFAULT_ERROR = new DefaultError(); // 500
 
 module.exports.getUsers = (req, res) => {
   User.find({})
@@ -13,14 +14,15 @@ module.exports.getUsers = (req, res) => {
 
 module.exports.getUserById = (req, res) => {
   User.findById(req.params.userId)
+    .orFail(NOT_EXIST_ERROR)
     .then((user) => {
-      if (!user) {
-        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
-        return;
-      }
       res.send({ data: user });
     })
     .catch((err) => {
+      if (err.name === 'NotExistError') {
+        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
+        return;
+      }
       if (err.name === 'CastError') {
         res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
         return;
@@ -33,9 +35,9 @@ module.exports.createUser = (req, res) => {
   const { name, about, avatar } = req.body;
 
   User.create({ name, about, avatar })
-    .then((user) => res.send({ data: user }))
+    .then((user) => res.status(CREATED_CODE).send({ data: user }))
     .catch((err) => {
-      if (err.name === VALIDATION_ERROR.name) {
+      if (err.name === 'ValidationError') {
         res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
         return;
       }
@@ -52,18 +54,18 @@ module.exports.updateUserInfo = (req, res) => {
     {
       new: true,
       runValidators: true,
-      upsert: true,
     },
   )
+    .orFail(NOT_EXIST_ERROR)
     .then((user) => {
-      if (!user) {
-        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
-        return;
-      }
       res.send({ data: user });
     })
     .catch((err) => {
-      if (err.name === VALIDATION_ERROR.name) {
+      if (err.name === 'NotExistError') {
+        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
+        return;
+      }
+      if (err.name === 'ValidationError') {
         res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
         return;
       }
@@ -80,18 +82,18 @@ module.exports.updateUserAvatar = (req, res) => {
     {
       new: true,
       runValidators: true,
-      upsert: true,
     },
   )
+    .orFail(NOT_EXIST_ERROR)
     .then((user) => {
-      if (!user) {
-        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
-        return;
-      }
       res.send({ data: user });
     })
     .catch((err) => {
-      if (err.name === VALIDATION_ERROR.name) {
+      if (err.name === 'NotExistError') {
+        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
+        return;
+      }
+      if (err.name === 'ValidationError') {
         res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
         return;
       }

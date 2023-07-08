@@ -1,15 +1,19 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
+const helmet = require('helmet');
 
-const { PORT = 3000 } = process.env;
+const { PORT = 3000, DB_URL = 'mongodb://127.0.0.1:27017/mestodb' } = process.env;
 
 const app = express();
+
+app.use(helmet());
+app.disable('x-powered-by');
 
 app.use(express.json());
 
 // подключаемся к серверу mongo
-mongoose.connect('mongodb://localhost:27017/mestodb', {
+mongoose.connect(DB_URL, {
   useNewUrlParser: true,
   //   useCreateIndex: true,
   //   useFindAndModify: false
@@ -18,7 +22,7 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
 // подключаем мидлвары, роуты и всё остальное...
 app.use((req, res, next) => {
   req.user = {
-    _id: '64a80ccb8a22ffacc8a90d39',
+    _id: '64a9195d1f57200ccd55800f',
   };
 
   next();
@@ -30,7 +34,7 @@ app.use('/cards', require('./routes/cards'));
 
 app.use((req, res) => {
   res.status(404).json({
-    message: 'Страница не найдена :)',
+    message: 'Страница не найдена :(',
   });
 });
 
