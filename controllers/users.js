@@ -2,41 +2,53 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
-const { AuthError, ValidationError, NotFoundError, DefaultError } = require('../errors/errors');
+const {
+  ValidationError,
+  NotFoundError,
+  DefaultError,
+} = require('../errors/errors');
 
 const CREATED_CODE = 201;
-const AUTH_ERROR = new AuthError('Необходима авторизация'); // 401
+// const AUTH_ERROR = new AuthError('Необходима авторизация'); // 401
 const VALIDATION_ERROR = new ValidationError('Переданы некорректные данные'); // 400
 const NOT_FOUND_ERROR = new NotFoundError('Пользователь по указанному id не найден'); // 404
 const DEFAULT_ERROR = new DefaultError(); // 500
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send({ data: users }))
-    .catch(() => res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message }));
+    .catch(next);
+  // .catch(() => res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message }));
 };
 
-module.exports.getUserById = (req, res) => {
+module.exports.getUserById = (req, res, next) => {
   User.findById(req.body.id)
-    .orFail(NOT_FOUND_ERROR)
+    .orFail(new NotFoundError('Пользователь по указанному id не найден'))
     .then((user) => {
       res.send({ data: user });
     })
-    .catch((err) => {
-      if (err.name === 'NotFoundError') {
-        res.status(NOT_FOUND_ERROR.statusCode).send({ message: NOT_FOUND_ERROR.message });
-        return;
-      }
-      if (err.name === 'CastError') {
-        res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
-        return;
-      }
-      res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message });
-    });
+    .catch(next);
+  // .catch((err) => {
+  //   if (err.name === 'NotFoundError') {
+  //     res.status(NOT_FOUND_ERROR.statusCode).send({ message: NOT_FOUND_ERROR.message });
+  //     return;
+  //   }
+  //   if (err.name === 'CastError') {
+  //     res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
+  //     return;
+  //   }
+  //   res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message });
+  // });
 };
 
-module.exports.createUser = (req, res) => {
-  const { email, password, name, about, avatar } = req.body;
+module.exports.createUser = (req, res, next) => {
+  const {
+    email,
+    password,
+    name,
+    about,
+    avatar,
+  } = req.body;
 
   bcrypt.hash(password, 10)
     .then((hash) => User.create({
@@ -46,29 +58,33 @@ module.exports.createUser = (req, res) => {
       about,
       avatar,
     }))
+    // .orFail(new ValidationError('Переданы некорректные данные'))
     .then((user) => {
       res.status(CREATED_CODE).send({
         _id: user._id,
         email: user.email,
       });
     })
-    .catch(() => {
-      res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
-    });
+    .catch(next);
+  // .catch(() => {
+  //   res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
+  // });
 };
 
 module.exports.login = (req, res) => {
   const { email, password } = req.body;
 
   return User.findUserByCredentials(email, password)
+    // .orFail(new AuthError('Неправильные почта или пароль'))
     .then((user) => {
       res.send({
         token: jwt.sign({ _id: user._id }, 'super-strong-secret', { expiresIn: '7d' }),
       });
     })
-    .catch(() => {
-      res.status(AUTH_ERROR.statusCode).send({ message: AUTH_ERROR.message });
-    });
+    .catch((err) => res.send(err.message));
+  // .catch(() => {
+  //   res.status(AUTH_ERROR.statusCode).send({ message: AUTH_ERROR.message });
+  // });
 };
 
 module.exports.updateUserInfo = (req, res) => {
