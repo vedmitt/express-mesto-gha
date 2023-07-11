@@ -3,22 +3,16 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
 const {
-  ValidationError,
   NotFoundError,
-  DefaultError,
+  ConflictError,
 } = require('../errors/errors');
 
 const CREATED_CODE = 201;
-// const AUTH_ERROR = new AuthError('Необходима авторизация'); // 401
-const VALIDATION_ERROR = new ValidationError('Переданы некорректные данные'); // 400
-const NOT_FOUND_ERROR = new NotFoundError('Пользователь по указанному id не найден'); // 404
-const DEFAULT_ERROR = new DefaultError(); // 500
 
 module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send({ data: users }))
     .catch(next);
-  // .catch(() => res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message }));
 };
 
 module.exports.getUserById = (req, res, next) => {
@@ -28,17 +22,6 @@ module.exports.getUserById = (req, res, next) => {
       res.send({ data: user });
     })
     .catch(next);
-  // .catch((err) => {
-  //   if (err.name === 'NotFoundError') {
-  //     res.status(NOT_FOUND_ERROR.statusCode).send({ message: NOT_FOUND_ERROR.message });
-  //     return;
-  //   }
-  //   if (err.name === 'CastError') {
-  //     res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
-  //     return;
-  //   }
-  //   res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message });
-  // });
 };
 
 module.exports.createUser = (req, res, next) => {
@@ -58,36 +41,33 @@ module.exports.createUser = (req, res, next) => {
       about,
       avatar,
     }))
-    // .orFail(new ValidationError('Переданы некорректные данные'))
     .then((user) => {
       res.status(CREATED_CODE).send({
         _id: user._id,
         email: user.email,
       });
     })
-    .catch(next);
-  // .catch(() => {
-  //   res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
-  // });
+    .catch((err) => {
+      if (err.code === 11000) {
+        next(new ConflictError('Данный email уже зарегистрирован'));
+      }
+      next();
+    });
 };
 
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
   return User.findUserByCredentials(email, password)
-    // .orFail(new AuthError('Неправильные почта или пароль'))
     .then((user) => {
       res.send({
         token: jwt.sign({ _id: user._id }, 'super-strong-secret', { expiresIn: '7d' }),
       });
     })
-    .catch((err) => res.send(err.message));
-  // .catch(() => {
-  //   res.status(AUTH_ERROR.statusCode).send({ message: AUTH_ERROR.message });
-  // });
+    .catch(next);
 };
 
-module.exports.updateUserInfo = (req, res) => {
+module.exports.updateUserInfo = (req, res, next) => {
   const { name, about } = req.body;
 
   User.findByIdAndUpdate(
@@ -98,24 +78,14 @@ module.exports.updateUserInfo = (req, res) => {
       runValidators: true,
     },
   )
-    .orFail(NOT_FOUND_ERROR)
+    .orFail(new NotFoundError('Пользователь по указанному id не найден'))
     .then((user) => {
       res.send({ data: user });
     })
-    .catch((err) => {
-      if (err.name === 'NotExistError') {
-        res.status(NOT_FOUND_ERROR.statusCode).send({ message: NOT_FOUND_ERROR.message });
-        return;
-      }
-      if (err.name === 'ValidationError') {
-        res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
-        return;
-      }
-      res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message });
-    });
+    .catch(next);
 };
 
-module.exports.updateUserAvatar = (req, res) => {
+module.exports.updateUserAvatar = (req, res, next) => {
   const { avatar } = req.body;
 
   User.findByIdAndUpdate(
@@ -126,19 +96,9 @@ module.exports.updateUserAvatar = (req, res) => {
       runValidators: true,
     },
   )
-    .orFail(NOT_FOUND_ERROR)
+    .orFail(new NotFoundError('Пользователь по указанному id не найден'))
     .then((user) => {
       res.send({ data: user });
     })
-    .catch((err) => {
-      if (err.name === 'NotExistError') {
-        res.status(NOT_FOUND_ERROR.statusCode).send({ message: NOT_FOUND_ERROR.message });
-        return;
-      }
-      if (err.name === 'ValidationError') {
-        res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
-        return;
-      }
-      res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message });
-    });
+    .catch(next);
 };

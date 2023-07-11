@@ -22,6 +22,14 @@ class NotFoundError extends Error {
   }
 }
 
+class ConflictError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ConflictError';
+    this.statusCode = 409;
+  }
+}
+
 class DefaultError extends Error {
   constructor(message = 'На сервере произошла ошибка') {
     super(message);
@@ -34,5 +42,6 @@ module.exports = {
   AuthError,
   ValidationError,
   NotFoundError,
+  ConflictError,
   DefaultError,
 };

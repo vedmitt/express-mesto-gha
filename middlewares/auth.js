@@ -12,7 +12,7 @@ module.exports = (req, res, next) => {
   const { authorization } = req.headers;
 
   if (!authorization || !authorization.startsWith('Bearer ')) {
-    // console.log(authorization);
+    console.log(authorization);
     return handleAuthError(res);
   }
 
