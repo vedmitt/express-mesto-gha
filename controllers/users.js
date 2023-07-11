@@ -1,9 +1,13 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 const User = require('../models/user');
-const { ValidationError, NotExistError, DefaultError } = require('../errors/errors');
+const { AuthError, ValidationError, NotFoundError, DefaultError } = require('../errors/errors');
 
 const CREATED_CODE = 201;
+const AUTH_ERROR = new AuthError('Необходима авторизация'); // 401
 const VALIDATION_ERROR = new ValidationError('Переданы некорректные данные'); // 400
-const NOT_EXIST_ERROR = new NotExistError('Пользователь по указанному _id не найден'); // 404
+const NOT_FOUND_ERROR = new NotFoundError('Пользователь по указанному id не найден'); // 404
 const DEFAULT_ERROR = new DefaultError(); // 500
 
 module.exports.getUsers = (req, res) => {
@@ -13,14 +17,14 @@ module.exports.getUsers = (req, res) => {
 };
 
 module.exports.getUserById = (req, res) => {
-  User.findById(req.params.userId)
-    .orFail(NOT_EXIST_ERROR)
+  User.findById(req.body.id)
+    .orFail(NOT_FOUND_ERROR)
     .then((user) => {
       res.send({ data: user });
     })
     .catch((err) => {
-      if (err.name === 'NotExistError') {
-        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
+      if (err.name === 'NotFoundError') {
+        res.status(NOT_FOUND_ERROR.statusCode).send({ message: NOT_FOUND_ERROR.message });
         return;
       }
       if (err.name === 'CastError') {
@@ -32,16 +36,38 @@ module.exports.getUserById = (req, res) => {
 };
 
 module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
+  const { email, password, name, about, avatar } = req.body;
 
-  User.create({ name, about, avatar })
-    .then((user) => res.status(CREATED_CODE).send({ data: user }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
-        return;
-      }
-      res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message });
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      email,
+      password: hash,
+      name,
+      about,
+      avatar,
+    }))
+    .then((user) => {
+      res.status(CREATED_CODE).send({
+        _id: user._id,
+        email: user.email,
+      });
+    })
+    .catch(() => {
+      res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
+    });
+};
+
+module.exports.login = (req, res) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      res.send({
+        token: jwt.sign({ _id: user._id }, 'super-strong-secret', { expiresIn: '7d' }),
+      });
+    })
+    .catch(() => {
+      res.status(AUTH_ERROR.statusCode).send({ message: AUTH_ERROR.message });
     });
 };
 
@@ -56,13 +82,13 @@ module.exports.updateUserInfo = (req, res) => {
       runValidators: true,
     },
   )
-    .orFail(NOT_EXIST_ERROR)
+    .orFail(NOT_FOUND_ERROR)
     .then((user) => {
       res.send({ data: user });
     })
     .catch((err) => {
       if (err.name === 'NotExistError') {
-        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
+        res.status(NOT_FOUND_ERROR.statusCode).send({ message: NOT_FOUND_ERROR.message });
         return;
       }
       if (err.name === 'ValidationError') {
@@ -84,13 +110,13 @@ module.exports.updateUserAvatar = (req, res) => {
       runValidators: true,
     },
   )
-    .orFail(NOT_EXIST_ERROR)
+    .orFail(NOT_FOUND_ERROR)
     .then((user) => {
       res.send({ data: user });
     })
     .catch((err) => {
       if (err.name === 'NotExistError') {
-        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
+        res.status(NOT_FOUND_ERROR.statusCode).send({ message: NOT_FOUND_ERROR.message });
         return;
       }
       if (err.name === 'ValidationError') {

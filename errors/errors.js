@@ -6,10 +6,18 @@ class ValidationError extends Error {
   }
 }
 
-class NotExistError extends Error {
+class AuthError extends Error {
   constructor(message) {
     super(message);
-    this.name = 'NotExistError';
+    this.name = 'AuthError';
+    this.statusCode = 401;
+  }
+}
+
+class NotFoundError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'NotFoundError';
     this.statusCode = 404;
   }
 }
@@ -23,7 +31,8 @@ class DefaultError extends Error {
 }
 
 module.exports = {
+  AuthError,
   ValidationError,
-  NotExistError,
+  NotFoundError,
   DefaultError,
 };

@@ -1,9 +1,9 @@
 const Card = require('../models/card');
-const { ValidationError, NotExistError, DefaultError } = require('../errors/errors');
+const { ValidationError, NotFoundError, DefaultError } = require('../errors/errors');
 
 const CREATED_CODE = 201;
 const VALIDATION_ERROR = new ValidationError('Переданы некорректные данные');
-const NOT_EXIST_ERROR = new NotExistError('Карточка с указанным _id не найдена');
+const NOT_EXIST_ERROR = new NotFoundError('Карточка с указанным _id не найдена');
 const DEFAULT_ERROR = new DefaultError();
 
 module.exports.getCards = (req, res) => {
