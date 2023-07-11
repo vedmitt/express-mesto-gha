@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const { errors, celebrate, Joi } = require('celebrate');
 
 const { createUser, login } = require('./controllers/users');
@@ -15,6 +16,7 @@ const app = express();
 app.use(helmet());
 app.disable('x-powered-by');
 
+app.use(cookieParser());
 app.use(express.json());
 
 // подключаемся к серверу mongo

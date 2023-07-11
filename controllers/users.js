@@ -9,21 +9,6 @@ const {
 
 const CREATED_CODE = 201;
 
-module.exports.getUsers = (req, res, next) => {
-  User.find({})
-    .then((users) => res.send({ data: users }))
-    .catch(next);
-};
-
-module.exports.getUserById = (req, res, next) => {
-  User.findById(req.body.id)
-    .orFail(new NotFoundError('Пользователь по указанному id не найден'))
-    .then((user) => {
-      res.send({ data: user });
-    })
-    .catch(next);
-};
-
 module.exports.createUser = (req, res, next) => {
   const {
     email,
@@ -42,10 +27,7 @@ module.exports.createUser = (req, res, next) => {
       avatar,
     }))
     .then((user) => {
-      res.status(CREATED_CODE).send({
-        _id: user._id,
-        email: user.email,
-      });
+      res.status(CREATED_CODE).send(user);
     })
     .catch((err) => {
       if (err.code === 11000) {
@@ -60,9 +42,27 @@ module.exports.login = (req, res, next) => {
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      res.send({
-        token: jwt.sign({ _id: user._id }, 'super-strong-secret', { expiresIn: '7d' }),
-      });
+      res
+        .cookie('jwt', jwt.sign({ _id: user._id }, 'super-strong-secret', { expiresIn: '7d' }), {
+          maxAge: 3600000 * 24 * 7,
+          httpOnly: true,
+        })
+        .end(); // если у ответа нет тела, можно использовать метод end
+    })
+    .catch(next);
+};
+
+module.exports.getUsers = (req, res, next) => {
+  User.find({})
+    .then((users) => res.send({ data: users }))
+    .catch(next);
+};
+
+module.exports.getCurrentUser = (req, res, next) => {
+  User.findById(req.user._id)
+    .orFail(new NotFoundError('Пользователь по указанному id не найден'))
+    .then((user) => {
+      res.send({ data: user });
     })
     .catch(next);
 };
