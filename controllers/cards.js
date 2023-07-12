@@ -1,92 +1,53 @@
 const Card = require('../models/card');
-const { ValidationError, NotFoundError, DefaultError } = require('../errors/errors');
+const { NotFoundError } = require('../errors/errors');
 
 const CREATED_CODE = 201;
-const VALIDATION_ERROR = new ValidationError('Переданы некорректные данные');
-const NOT_EXIST_ERROR = new NotFoundError('Карточка с указанным _id не найдена');
-const DEFAULT_ERROR = new DefaultError();
 
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.send({ data: cards }))
-    .catch(() => res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message }));
+    .catch(next);
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
 
   Card.create({ name, link, owner: req.user._id })
     .then((card) => res.status(CREATED_CODE).send({ data: card }))
-    .catch((err) => {
-      if (err.name === VALIDATION_ERROR.name) {
-        res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
-        return;
-      }
-      res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message });
-    });
+    .catch(next);
 };
 
-module.exports.removeCardById = (req, res) => {
+module.exports.removeCardById = (req, res, next) => {
   Card.findByIdAndRemove(req.params.cardId)
-    .orFail(NOT_EXIST_ERROR)
+    .orFail(new NotFoundError('Карточка с указанным id не найдена'))
     .then((card) => {
       res.send({ data: card });
     })
-    .catch((err) => {
-      if (err.name === 'NotExistError') {
-        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
-        return;
-      }
-      if (err.name === 'CastError') {
-        res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
-        return;
-      }
-      res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message });
-    });
+    .catch(next);
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
     { new: true },
   )
-    .orFail(NOT_EXIST_ERROR)
+    .orFail(new NotFoundError('Карточка с указанным id не найдена'))
     .then((card) => {
       res.send({ data: card });
     })
-    .catch((err) => {
-      if (err.name === 'NotExistError') {
-        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
-        return;
-      }
-      if (err.name === 'CastError') {
-        res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
-        return;
-      }
-      res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message });
-    });
+    .catch(next);
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } }, // убрать _id из массива
     { new: true },
   )
-    .orFail(NOT_EXIST_ERROR)
+    .orFail(new NotFoundError('Карточка с указанным id не найдена'))
     .then((card) => {
       res.send({ data: card });
     })
-    .catch((err) => {
-      if (err.name === 'NotExistError') {
-        res.status(NOT_EXIST_ERROR.statusCode).send({ message: NOT_EXIST_ERROR.message });
-        return;
-      }
-      if (err.name === 'CastError') {
-        res.status(VALIDATION_ERROR.statusCode).send({ message: VALIDATION_ERROR.message });
-        return;
-      }
-      res.status(DEFAULT_ERROR.statusCode).send({ message: DEFAULT_ERROR.message });
-    });
+    .catch(next);
 };

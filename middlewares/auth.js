@@ -6,18 +6,7 @@ const handleAuthError = (res) => {
     .send({ message: 'Необходима авторизация' });
 };
 
-// const extractBearerToken = (header) => header.replace('Bearer ', '');
-
 module.exports = (req, res, next) => {
-  // const { authorization } = req.headers;
-  // console.log(authorization);
-  // console.log(req.cookies.jwt); // достаём токен
-
-  // if (!authorization || !authorization.startsWith('Bearer ')) {
-  //   return handleAuthError(res);
-  // }
-
-  // const token = extractBearerToken(authorization);
   const token = req.cookies.jwt;
   let payload;
 
@@ -26,7 +15,6 @@ module.exports = (req, res, next) => {
   } catch (err) {
     return handleAuthError(res);
   }
-  console.log(payload);
   req.user = payload;
 
   next();

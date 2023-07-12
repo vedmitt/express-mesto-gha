@@ -1,11 +1,3 @@
-class ValidationError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = 'ValidationError';
-    this.statusCode = 400;
-  }
-}
-
 class AuthError extends Error {
   constructor(message) {
     super(message);
@@ -30,18 +22,8 @@ class ConflictError extends Error {
   }
 }
 
-class DefaultError extends Error {
-  constructor(message = 'На сервере произошла ошибка') {
-    super(message);
-    this.name = 'DefaultError';
-    this.statusCode = 500;
-  }
-}
-
 module.exports = {
   AuthError,
-  ValidationError,
   NotFoundError,
   ConflictError,
-  DefaultError,
 };
