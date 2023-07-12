@@ -74,10 +74,10 @@ app.use((err, req, res, next) => {
     });
 });
 
-// app.use((req, res) => {
-//   res.status(404).json({
-//     message: 'Страница не найдена :(',
-//   });
-// });
+app.use((req, res) => {
+  res.status(404).json({
+    message: 'Страница не найдена :(',
+  });
+});
 
 app.listen(PORT);
