@@ -56,12 +56,6 @@ app.use(auth);
 app.use('/users', require('./routes/users'));
 app.use('/cards', require('./routes/cards'));
 
-app.use((req, res) => {
-  res.status(404).json({
-    message: 'Страница не найдена :(',
-  });
-});
-
 // обработчики ошибок
 app.use(errors()); // обработчик ошибок celebrate
 
@@ -79,5 +73,11 @@ app.use((err, req, res) => {
         : message,
     });
 });
+
+// app.use((req, res) => {
+//   res.status(404).json({
+//     message: 'Страница не найдена :(',
+//   });
+// });
 
 app.listen(PORT);
