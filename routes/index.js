@@ -1,11 +1,12 @@
 const router = require('express').Router();
+const { celebrate, Joi } = require('celebrate');
+
 const userRouter = require('./users');
 const cardRouter = require('./cards');
 const auth = require('../middlewares/auth');
 const NotFoundError = require('../errors/not-found-err');
 const { createUser, login } = require('../controllers/users');
 const regex = require('../utils/constants').imageUrlRegex;
-const { celebrate, Joi } = require('celebrate');
 
 router.post('/signup', celebrate({
   body: Joi.object().keys({

@@ -18,6 +18,6 @@ module.exports = (req, res, next) => {
     return handleAuthError();
   }
   req.user = payload;
-
   next();
+  return null;
 };
