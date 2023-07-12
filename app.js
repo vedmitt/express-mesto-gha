@@ -60,7 +60,7 @@ app.use('/cards', require('./routes/cards'));
 app.use(errors()); // обработчик ошибок celebrate
 
 // наш централизованный обработчик
-app.use((err, req, res) => {
+app.use((err, req, res, next) => {
   // если у ошибки нет статуса, выставляем 500
   const { statusCode = 500, message } = err;
 
