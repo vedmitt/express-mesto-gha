@@ -18,10 +18,19 @@ module.exports.createCard = (req, res, next) => {
 };
 
 module.exports.removeCardById = (req, res, next) => {
-  Card.findByIdAndRemove(req.params.cardId)
+  Card.findById(req.params.cardId)
     .orFail(new NotFoundError('Карточка с указанным id не найдена'))
     .then((card) => {
-      res.send({ data: card });
+      if (card.owner.toString() === req.user._id) {
+        Card.findByIdAndDelete(card._id)
+          .then((removedCard) => {
+            res.send({ data: removedCard });
+          }).catch(next);
+      } else {
+        const err = new Error('Чужую карточку нельзя удалить!');
+        err.statusCode = 403;
+        throw err;
+      }
     })
     .catch(next);
 };

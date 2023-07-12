@@ -39,7 +39,7 @@ app.post('/signup', celebrate({
     password: Joi.string().required().min(8),
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string().required().pattern(/(https?:\/\/)(w{3}\.)?(((\d{1,3}\.){3}\d{1,3})|((\w-?)+\.))(:\d{2,5})?((\/.+)+)?\/?#?/),
+    avatar: Joi.string().pattern(/(https?:\/\/)(w{3}\.)?(((\d{1,3}\.){3}\d{1,3})|((\w-?)+\.))(:\d{2,5})?((\/.+)+)?\/?#?/),
   }),
 }), createUser);
 app.post('/signin', celebrate({
@@ -56,11 +56,17 @@ app.use(auth);
 app.use('/users', require('./routes/users'));
 app.use('/cards', require('./routes/cards'));
 
+app.use((req, res) => {
+  res.status(404).json({
+    message: 'Страница не найдена :(',
+  });
+});
+
 // обработчики ошибок
 app.use(errors()); // обработчик ошибок celebrate
 
 // наш централизованный обработчик
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   // если у ошибки нет статуса, выставляем 500
   const { statusCode = 500, message } = err;
 
@@ -73,11 +79,5 @@ app.use((err, req, res, next) => {
         : message,
     });
 });
-
-// app.use((req, res) => {
-//   res.status(404).json({
-//     message: 'Страница не найдена :(',
-//   });
-// });
 
 app.listen(PORT);

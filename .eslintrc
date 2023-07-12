@@ -4,6 +4,8 @@
     "no-underscore-dangle": ["error", { "allow": ["_id"] }],
     "max-classes-per-file": "off",
     "consistent-return": "off",
-    "func-names": "off"
+    "func-names": "off",
+    "object-curly-newline": "off",
+    "no-shadow": "off"
  }
 }
