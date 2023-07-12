@@ -1,5 +1,7 @@
 const Card = require('../models/card');
-const { NotFoundError } = require('../errors/errors');
+const BadRequestError = require('../errors/bad-request-err');
+const NotFoundError = require('../errors/not-found-err');
+const ForbiddenError = require('../errors/forbidden-err');
 
 const CREATED_CODE = 201;
 
@@ -14,7 +16,13 @@ module.exports.createCard = (req, res, next) => {
 
   Card.create({ name, link, owner: req.user._id })
     .then((card) => res.status(CREATED_CODE).send({ data: card }))
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Некорректные данные при создании карточки'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 module.exports.removeCardById = (req, res, next) => {
@@ -27,9 +35,7 @@ module.exports.removeCardById = (req, res, next) => {
             res.send({ data: removedCard });
           }).catch(next);
       } else {
-        const err = new Error('Чужую карточку нельзя удалить!');
-        err.statusCode = 403;
-        throw err;
+        throw new ForbiddenError('Чужую карточку нельзя удалить!');
       }
     })
     .catch(next);

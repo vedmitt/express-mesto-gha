@@ -2,10 +2,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
-const {
-  NotFoundError,
-  ConflictError,
-} = require('../errors/errors');
+const BadRequestError = require('../errors/bad-request-err');
+const ConflictError = require('../errors/conflict-err');
+const NotFoundError = require('../errors/not-found-err');
 
 const CREATED_CODE = 201;
 
@@ -30,10 +29,13 @@ module.exports.createUser = (req, res, next) => {
       res.status(CREATED_CODE).send({ email, name, about, avatar, _id });
     })
     .catch((err) => {
-      if (err.code === 11000) {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Некорректные данные при создании пользователя'));
+      } else if (err.code === 11000) {
         next(new ConflictError('Данный email уже зарегистрирован'));
+      } else {
+        next(err);
       }
-      next();
     });
 };
 
@@ -93,7 +95,13 @@ module.exports.updateUserInfo = (req, res, next) => {
     .then((user) => {
       res.send({ data: user });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Некорректные данные при обновлении данных пользователя'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 module.exports.updateUserAvatar = (req, res, next) => {
@@ -111,5 +119,11 @@ module.exports.updateUserAvatar = (req, res, next) => {
     .then((user) => {
       res.send({ data: user });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Некорректные данные при обновлении аватара пользователя'));
+      } else {
+        next(err);
+      }
+    });
 };

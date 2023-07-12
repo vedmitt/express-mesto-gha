@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
 
-const { AuthError } = require('../errors/errors');
+const UnauthorizedError = require('../errors/unauthorized-err');
 
-const AUTH_ERROR = new AuthError('Неправильные почта или пароль');
+const AUTH_ERROR = new UnauthorizedError('Неправильные почта или пароль');
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -19,7 +19,6 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Поле "password" должно быть заполнено'],
-    minlength: 8,
     select: false,
   },
   name: {
